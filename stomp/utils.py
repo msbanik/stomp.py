@@ -17,18 +17,18 @@ from backward import NULL
 # addresses) that refer to the local host (both loopback interface
 # and external interfaces).  This is used for determining
 # preferred targets.
-LOCALHOST_NAMES = [ "localhost", "127.0.0.1" ]
+LOCALHOST_NAMES = ["localhost", "127.0.0.1"]
 
 try:
     LOCALHOST_NAMES.append(socket.gethostbyname(socket.gethostname()))
 except:
     pass
-    
+
 try:
     LOCALHOST_NAMES.append(socket.gethostname())
 except:
     pass
-    
+
 try:
     LOCALHOST_NAMES.append(socket.getfqdn(socket.gethostname()))
 except:
@@ -111,7 +111,7 @@ def parse_frame(frame):
     if frame == '\x0a':
         f.cmd = 'heartbeat'
         return f
-        
+
     mat = PREAMBLE_END_RE.search(frame)
     preamble_end = -1
     if mat:
@@ -135,7 +135,7 @@ def parse_frame(frame):
 
     return f
 
-    
+
 def merge_headers(header_map_list):
     """
     Helper function for combining multiple header maps into one.
@@ -145,7 +145,7 @@ def merge_headers(header_map_list):
         headers.update(header_map)
     return headers
 
-    
+
 def calculate_heartbeats(shb, chb):
     """
     Given a heartbeat string from the server, and a heartbeat tuple from the client,
@@ -168,7 +168,7 @@ def calculate_heartbeats(shb, chb):
 
 
 def convert_frame_to_lines(frame):
-    lines = [ ]
+    lines = []
     if frame.cmd:
         lines.append(frame.cmd)
         lines.append("\n")
@@ -184,15 +184,17 @@ def convert_frame_to_lines(frame):
     if frame.cmd:
         lines.append(NULL)
     return lines
-    
+
+
 class Frame:
     """
     A STOMP frame to send. Comprises a command, the headers and the body content.
     """
+
     def __init__(self, cmd=None, headers={}, body=None):
         self.cmd = cmd
         self.headers = headers
         self.body = body
-        
+
     def __str__(self):
         return '{cmd=%s,headers=[%s],body=%s}' % (self.cmd, self.headers, self.body)

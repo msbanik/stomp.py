@@ -10,10 +10,8 @@ import hashlib
 # Basically where we have functions which differ between python 2 and 3, we provide implementations here
 # and then Python-specific versions in backward2 and backward3.
 
-if sys.hexversion >= 0x03000000: # Python 3+
-    from backward3 import *
-else: # Python 2
-    from backward2 import *
+if sys.hexversion >= 0x03000000:  # Python 3+
+else:  # Python 2
 
 
 def get_errno(e):
@@ -25,11 +23,12 @@ def get_errno(e):
     except AttributeError:
         return e.args[0]
 
-        
+
 class uuid(object):
     """
     A dummy version of Python's uuid module.
     """
+
     @staticmethod
     def uuid4(*args):
         """
@@ -40,7 +39,7 @@ class uuid(object):
         r = int(random.random() * 100000000000000000)
 
         try:
-            a = socket.gethostbyname( socket.gethostname() )
+            a = socket.gethostbyname(socket.gethostname())
         except:
             # if we can't get a network address, just imagine one
             a = random.random() * 100000000000000000
@@ -61,5 +60,5 @@ def gcd(a, b):
     Copyright (c) 2001-2011 Python Software Foundation; All Rights Reserved
     """
     while b:
-        a, b = b, a%b
+        a, b = b, a % b
     return a

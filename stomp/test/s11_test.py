@@ -2,8 +2,8 @@ import unittest
 
 import stomp
 from stomp import listener
-
 from stomp.test.testutils import *
+
 
 class Test11Send(unittest.TestCase):
     def test11(self):
@@ -21,20 +21,20 @@ class Test11Send(unittest.TestCase):
         self.assert_(tl.connections == 1, 'should have received 1 connection acknowledgement')
         self.assert_(tl.messages >= 1, 'should have received at least 1 message')
         self.assert_(tl.errors == 0, 'should not have received any errors')
-        
+
         conn.unsubscribe(destination='/queue/test', id=1)
-        
+
         wl = listener.WaitingListener('DISCONNECT1')
         conn.set_listener('waiting', wl)
-        
+
         # stomp1.1 disconnect with receipt
         conn.disconnect(receipt='DISCONNECT1')
-        
+
         # wait for the receipt
         wl.wait_on_receipt()
-        
+
     def testheartbeat(self):
-        conn = stomp.Connection(get_standard_host(), heartbeats=(2000,3000))
+        conn = stomp.Connection(get_standard_host(), heartbeats=(2000, 3000))
         listener = TestListener('123')
         conn.set_listener('', listener)
         conn.start()
@@ -47,10 +47,12 @@ class Test11Send(unittest.TestCase):
         listener.wait_on_receipt()
         conn.disconnect(receipt=None)
 
-        self.assert_(listener.connections >= 1, 'should have received 1 connection acknowledgement, was %s' % listener.connections)
+        self.assert_(listener.connections >= 1,
+                     'should have received 1 connection acknowledgement, was %s' % listener.connections)
         self.assert_(listener.messages >= 1, 'should have received 1 message, was %s' % listener.messages)
         self.assert_(listener.errors == 0, 'should not have received any errors, was %s' % listener.errors)
-        self.assert_(listener.heartbeat_timeouts == 0, 'should not have received a heartbeat timeout, was %s' % listener.heartbeat_timeouts)
+        self.assert_(listener.heartbeat_timeouts == 0,
+                     'should not have received a heartbeat timeout, was %s' % listener.heartbeat_timeouts)
 
     def testheartbeat_timeout(self):
         server = TestStompServer('127.0.0.1', 60000)
@@ -62,7 +64,7 @@ session: 1
 server: test
 heart-beat: 1000,1000\x00''')
 
-            conn = stomp.Connection([('127.0.0.1', 60000)], heartbeats = (1000, 1000))
+            conn = stomp.Connection([('127.0.0.1', 60000)], heartbeats=(1000, 1000))
             listener = TestListener()
             conn.set_listener('', listener)
             conn.start()
@@ -76,5 +78,5 @@ heart-beat: 1000,1000\x00''')
             log.error("Error: %s" % e)
         finally:
             server.stop()
-            
+
         self.assert_(listener.heartbeat_timeouts >= 1, 'should have received a heartbeat timeout')

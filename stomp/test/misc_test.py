@@ -1,11 +1,8 @@
-import time
 import unittest
 import xml.dom.minidom
 import traceback
 
 import stomp
-from stomp.listener import *
-
 from stomp.test.testutils import *
 
 
@@ -38,13 +35,12 @@ class TransformationListener(WaitingListener):
                 #
                 traceback.print_exc()
                 return (headers, body)
-                
+
     def on_message(self, headers, body):
         self.message = body
-                    
+
 
 class TestMessageTransform(unittest.TestCase):
-
     def setUp(self):
         conn = stomp.Connection(get_standard_host())
         listener = TransformationListener('123')
@@ -54,11 +50,11 @@ class TestMessageTransform(unittest.TestCase):
         self.conn = conn
         self.listener = listener
         self.timestamp = time.strftime('%Y%m%d%H%M%S')
-        
+
     def tearDown(self):
         if self.conn:
             self.conn.disconnect(receipt=None)
-       
+
     def testTransform(self):
         queuename = '/queue/testtransform-%s' % self.timestamp
         self.conn.subscribe(destination=queuename, id=1, ack='auto')
@@ -72,11 +68,12 @@ class TestMessageTransform(unittest.TestCase):
         <string>city</string>
         <string>Belgrade</string>
     </entry>
-</map>''', destination=queuename, headers={'transformation':'jms-map-xml'}, receipt='123')
+</map>''', destination=queuename, headers={'transformation': 'jms-map-xml'}, receipt='123')
 
         self.listener.wait_on_receipt()
-        
+
         self.assert_(self.listener.message is not None, 'Did not receive a message')
-        self.assert_(self.listener.message.__class__ == dict, 'Message type should be dict after transformation, was %s' % self.listener.message.__class__)
+        self.assert_(self.listener.message.__class__ == dict,
+                     'Message type should be dict after transformation, was %s' % self.listener.message.__class__)
         self.assert_(self.listener.message['name'] == 'Dejan', 'Missing an expected dict element')
         self.assert_(self.listener.message['city'] == 'Belgrade', 'Missing an expected dict element')

@@ -1,7 +1,9 @@
+import uuid
+
 from transport import *
 from protocol import *
 from listener import *
-import uuid
+
 
 ##@namespace stomp.connect
 # Main entry point for clients to create a STOMP connection.
@@ -26,7 +28,7 @@ class BaseConnection(Publisher):
 
     def stop(self):
         self.transport.stop()
-        
+
     def is_connected(self):
         return self.transport.is_connected()
 
@@ -41,7 +43,8 @@ class StompConnection10(BaseConnection, Protocol10):
     """
     Represents a 1.0 connection (comprising transport plus 1.0 protocol class)
     """
-    def __init__(self, 
+
+    def __init__(self,
                  host_and_ports=None,
                  prefer_localhost=True,
                  try_loopback_connect=True,
@@ -66,7 +69,7 @@ class StompConnection10(BaseConnection, Protocol10):
                               keepalive, None)
         BaseConnection.__init__(self, transport)
         Protocol10.__init__(self, transport)
-        
+
     def disconnect(self, receipt=str(uuid.uuid4()), headers={}, **keyword_headers):
         Protocol10.disconnect(self, receipt, headers, **keyword_headers)
         self.transport.stop()
@@ -76,7 +79,8 @@ class StompConnection11(BaseConnection, Protocol11):
     """
     Represents a 1.1 connection (comprising transport plus 1.1 protocol class)
     """
-    def __init__(self, 
+
+    def __init__(self,
                  host_and_ports=None,
                  prefer_localhost=True,
                  try_loopback_connect=True,
@@ -103,7 +107,7 @@ class StompConnection11(BaseConnection, Protocol11):
                               keepalive, vhost)
         BaseConnection.__init__(self, transport)
         Protocol11.__init__(self, transport, heartbeats)
-        
+
     def disconnect(self, receipt=str(uuid.uuid4()), headers={}, **keyword_headers):
         Protocol11.disconnect(self, receipt, headers, **keyword_headers)
         self.transport.stop()
@@ -113,7 +117,8 @@ class StompConnection12(BaseConnection, Protocol12):
     """
     Represents a 1.2 connection (comprising transport plus 1.2 protocol class)
     """
-    def __init__(self, 
+
+    def __init__(self,
                  host_and_ports=None,
                  prefer_localhost=True,
                  try_loopback_connect=True,

@@ -1,8 +1,10 @@
 #! /usr/bin/env python
 
 import os
-import stomp
 import sys
+
+import stomp
+
 
 stomp_path = os.path.dirname(stomp.__file__)
 

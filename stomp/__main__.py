@@ -2,14 +2,15 @@ import base64
 import os
 import sys
 import time
-
 from cmd import Cmd
 from optparse import OptionParser
 
-from connect import StompConnection10,StompConnection11,StompConnection12
+from connect import StompConnection10, StompConnection11, StompConnection12
 from listener import ConnectionListener, StatsListener
 from adapter.multicast import MulticastConnection
 import colors
+
+
 sys.path.append('.')
 import stomp
 
@@ -23,7 +24,7 @@ import stomp
 stomppy_version = 'Stomp.py Version %s.%s.%s' % stomp.__version__
 
 try:
-    import uuid    
+    import uuid
 except ImportError:
     from backward import uuid
 
@@ -32,16 +33,20 @@ class SubscriptionInfo:
     """
     Used to store info about a subscription.
     """
+
     def __init__(self, id, ack):
         self.id = id
         self.ack = ack
-    
+
+
 class StompCLI(Cmd, ConnectionListener):
     """
     A command line interface to the stomp.py client.  See \link stomp::connect::StompConnection11 \endlink
     for more information on establishing a connection to a stomp server.
     """
-    def __init__(self, host='localhost', port=61613, user='', passcode='', ver='1.1', prompt='> ', verbose=True, stdin=sys.stdin, stdout=sys.stdout):
+
+    def __init__(self, host='localhost', port=61613, user='', passcode='', ver='1.1', prompt='> ', verbose=True,
+                 stdin=sys.stdin, stdout=sys.stdout):
         Cmd.__init__(self, 'Tab', stdin, stdout)
         ConnectionListener.__init__(self)
         self.prompt = prompt
@@ -82,10 +87,10 @@ class StompCLI(Cmd, ConnectionListener):
         self.__sysout(body)
         self.__sysout(self.prompt, end='')
         self.stdout.flush()
-        
+
     def __sysout(self, msg, end="\n"):
         self.stdout.write(str(msg) + end)
-        
+
     def __error(self, msg, end="\n"):
         self.stdout.write(colors.BOLD + colors.RED + str(msg) + colors.NO_COLOR + end)
 
@@ -138,105 +143,110 @@ class StompCLI(Cmd, ConnectionListener):
         \see ConnectionListener::on_connected
         """
         self.__print_async("CONNECTED", headers, body)
-        
+
     def help_help(self):
         self.__sysout('Quick help on commands')
-        
+
     def default(self, line):
         self.__error('Unknown command: %s' % line.split()[0])
-        
+
     def emptyline(self):
         pass
-        
+
     def help(self, usage, description, required=[], optional=[]):
         required.insert(0, '')
         rparams = "\n\t".join(required)
-        
+
         optional.insert(0, '')
         oparams = "\n\t".join(optional)
-        
+
         m = {
-            'hl' : colors.BOLD + colors.GREEN,
-            'nc' : colors.NO_COLOR,
-            'usage' : usage,
-            'description' : description,
-            'required' : rparams.rstrip(),
-            'optional' : oparams.rstrip()
+            'hl': colors.BOLD + colors.GREEN,
+            'nc': colors.NO_COLOR,
+            'usage': usage,
+            'description': description,
+            'required': rparams.rstrip(),
+            'optional': oparams.rstrip()
         }
-        
+
         if rparams.rstrip() != '':
             rparams = '''%(hl)sRequired Parameters:%(nc)s%(required)s\n\n''' % m
             m['required'] = rparams
-            
+
         if oparams.rstrip() != '':
             oparams = '''%(hl)sOptional Parameters:%(nc)s%(optional)s\n\n''' % m
             m['optional'] = oparams
-        
+
         self.__sysout('''%(hl)sUsage:%(nc)s
 \t%(usage)s
 
 %(required)s%(optional)s%(hl)sDescription:%(nc)s
 \t%(description)s
         ''' % m)
-     
+
     def do_quit(self, args):
         self.__quit = True
         return True
+
     do_exit = do_quit
     do_EOF = do_quit
-    
+
     def help_quit(self):
         self.help('exit', 'Exit the stomp client')
+
     help_exit = help_quit
-    
+
     def help_EOF(self):
         self.__sysout('')
-        
+
     def do_subscribe(self, args):
         args = args.split()
         if len(args) < 1:
             self.__error('Expecting: subscribe <destination> [ack]')
             return
-        
+
         name = args[0]
         if name in self.__subscriptions:
             self.__error('Already subscribed to %s' % name)
             return
-        
+
         ack_mode = 'auto'
         if len(args) >= 2:
-            ack_mode = args[1]   
-        
+            ack_mode = args[1]
+
         sid = self.__subscription_id
         self.__subscription_id += 1
 
         self.__sysout('Subscribing to "%s" with acknowledge set to "%s", id set to "%s"' % (name, ack_mode, sid))
-        self.conn.subscribe(destination=name, ack=ack_mode, id=sid)            
+        self.conn.subscribe(destination=name, ack=ack_mode, id=sid)
         self.__subscriptions[name] = SubscriptionInfo(sid, ack_mode)
-            
+
     def help_subscribe(self):
         self.help('subscribe <destination> [ack]',
-            '''Register to listen to a given destination. Like send, the subscribe command requires a destination
-\theader indicating which destination to subscribe to. The ack parameter is optional, and defaults to
-\tauto.''', [ 'destination - the name to subscribe to' ], [ 'ack - how to handle acknowledgements for a message; either automatically (auto) or manually (client)' ])
+                  '''Register to listen to a given destination. Like send, the subscribe command requires a destination
+      \theader indicating which destination to subscribe to. The ack parameter is optional, and defaults to
+      \tauto.''', ['destination - the name to subscribe to'], [
+                'ack - how to handle acknowledgements for a message; either automatically (auto) or manually (client)'])
 
     def do_unsubscribe(self, args):
         args = args.split()
         if len(args) < 1:
             self.__error('Expecting: unsubscribe <destination>')
             return
-    
+
         if args[0] not in self.__subscriptions.keys():
             self.__sysout('Subscription %s not found' % args[0])
             return
-        
+
         self.__sysout('Unsubscribing from "%s"' % args[0])
         self.conn.unsubscribe(destination=args[0], id=self.__subscriptions[args[0]].id)
         del self.__subscriptions[args[0]]
 
     def help_unsubscribe(self):
-        self.help('unsubscribe <destination>', 'Remove an existing subscription - so that the client no longer receive messages from that destination.',
-                [ 'destination - the name to unsubscribe from' ], [ 'ack - how to handle acknowledgements for a message; either automatically (auto) or manually (client)' ])
+        self.help('unsubscribe <destination>',
+                  'Remove an existing subscription - so that the client no longer receive messages from that destination.',
+                  ['destination - the name to unsubscribe from'], [
+                'ack - how to handle acknowledgements for a message; either automatically (auto) or manually (client)'])
 
     def do_send(self, args):
         args = args.split()
@@ -246,19 +256,20 @@ class StompCLI(Cmd, ConnectionListener):
             self.conn.send(args[0], ' '.join(args[1:]))
         else:
             self.conn.send(args[0], ' '.join(args[1:]), transaction=self.transaction_id)
-            
+
     def complete_send(self, text, line, begidx, endidx):
-        mline = line.split(' ')[1] 
-        offs = len(mline) - len(text) 
+        mline = line.split(' ')[1]
+        offs = len(mline) - len(text)
         return [s[offs:] for s in self.__subscriptions if s.startswith(mline)]
+
     complete_unsubscribe = complete_send
     complete_sendrec = complete_send
     complete_sendreply = complete_send
     complete_sendfile = complete_send
-            
+
     def help_send(self):
         self.help('send <destination> <message>', 'Sends a message to a destination in the messaging system.',
-            [ 'destination - where to send the message', 'message - the content to send' ])
+                  ['destination - where to send the message', 'message - the content to send'])
 
     def do_sendrec(self, args):
         args = args.split()
@@ -271,9 +282,10 @@ class StompCLI(Cmd, ConnectionListener):
             self.conn.send(args[0], ' '.join(args[1:]), transaction=self.transaction_id, receipt=receipt_id)
 
     def help_sendrec(self):
-        self.help('sendrec <destination> <message>', 'Sends a message to a destination in the messaging system and blocks for receipt of the message.',
-                    [ 'destination - where to send the message', 'message - the content to send' ])
-                    
+        self.help('sendrec <destination> <message>',
+                  'Sends a message to a destination in the messaging system and blocks for receipt of the message.',
+                  ['destination - where to send the message', 'message - the content to send'])
+
     def do_sendreply(self, args):
         args = args.split()
         if len(args) < 3:
@@ -282,8 +294,11 @@ class StompCLI(Cmd, ConnectionListener):
             self.conn.send(args[0], "%s\n" % ' '.join(args[2:]), headers={'correlation-id': args[1]})
 
     def help_sendreply(self):
-        self.help('sendreply <destination> <correlation-id> <message>', 'Sends a reply message to a destination in the messaging system.',
-                [ 'destination - where to send the message', 'correlation-id - the correlating identifier to send with the response', 'message - the content to send' ])
+        self.help('sendreply <destination> <correlation-id> <message>',
+                  'Sends a reply message to a destination in the messaging system.',
+                  ['destination - where to send the message',
+                   'correlation-id - the correlating identifier to send with the response',
+                   'message - the content to send'])
 
     def do_sendfile(self, args):
         args = args.split()
@@ -301,16 +316,19 @@ class StompCLI(Cmd, ConnectionListener):
 
     def help_sendfile(self):
         self.help('sendfile <destination> <filename>', 'Sends a file to a destination in the messaging system.',
-                [ 'destination - where to send the message', 'filename - the file to send' ])
+                  ['destination - where to send the message', 'filename - the file to send'])
 
     def do_version(self, args):
-        self.__sysout('%s%s [Protocol version %s]%s' % (colors.BOLD, stomppy_version, self.conn.version, colors.NO_COLOR))
+        self.__sysout(
+            '%s%s [Protocol version %s]%s' % (colors.BOLD, stomppy_version, self.conn.version, colors.NO_COLOR))
+
     do_ver = do_version
-    
+
     def help_version(self):
         self.help('version', 'Display the version of the client')
+
     help_ver = help_version
-    
+
     def check_ack_nack(self, cmd, args):
         if self.version >= 1.2 and len(args) < 1:
             self.__error("Expecting: %s <ack-id>" % cmd)
@@ -326,54 +344,57 @@ class StompCLI(Cmd, ConnectionListener):
             return (args[0], None)
         else:
             return (args[0], args[1])
-            
+
     def do_ack(self, args):
         args = args.split()
         hdrs = self.check_ack_nack('ack', args)
         if hdrs is None:
             return
-            
+
         (message_id, subscription_id) = hdrs
-            
+
         if not self.transaction_id:
             self.conn.ack(message_id, subscription_id)
         else:
             self.conn.ack(message_id, subscription_id, transaction=self.transaction_id)
-            
+
     def help_ack(self):
         self.help('ack <message-id> [subscription-id]', '''The command 'ack' is used to acknowledge consumption of a message from a subscription using client
 \tacknowledgment. When a client has issued a 'subscribe' with the ack flag set to client, any messages
 \treceived from that destination will not be considered to have been consumed (by the server) until
-\tthe message has been acknowledged.''', [ 'message-id - the id of the message being acknowledged' ], [ 'subscription-id the id of the subscription (only required for STOMP 1.1)' ] )
-            
+\tthe message has been acknowledged.''', ['message-id - the id of the message being acknowledged'],
+                  ['subscription-id the id of the subscription (only required for STOMP 1.1)'])
+
     def do_nack(self, args):
         args = args.split()
         hdrs = self.check_ack_nack('nack', args)
         if hdrs is None:
             return
-            
+
         if not self.transaction_id:
-            self.conn.nack(headers = hdrs)
+            self.conn.nack(headers=hdrs)
         else:
-            self.conn.nack(headers = hdrs, transaction=self.transaction_id)
-    
+            self.conn.nack(headers=hdrs, transaction=self.transaction_id)
+
     def help_nack(self):
         self.help('nack <message-id> [subscription]', '''The command 'nack' is used to acknowledge the failure of a message from a subscription using client
 \tacknowledgment. When a client has issued a 'subscribe' with the ack flag set to client, any messages
 \treceived from that destination will not be considered to have been consumed (by the server) until
-\tthe message has been acknowledged (ack or nack).''', [ 'message-id - the id of the message being acknowledged' ])
+\tthe message has been acknowledged (ack or nack).''', ['message-id - the id of the message being acknowledged'])
 
     def do_abort(self, args):
         if not self.transaction_id:
             self.__error("Not currently in a transaction")
         else:
-            self.conn.abort(transaction = self.transaction_id)
+            self.conn.abort(transaction=self.transaction_id)
             self.__sysout('Aborted transaction: %s' % self.transaction_id)
             self.transaction_id = None
+
     do_rollback = do_abort
 
     def help_abort(self):
         self.help('abort', 'Roll back a transaction in progress.')
+
     help_rollback = help_abort
 
     def do_begin(self, args):
@@ -382,7 +403,7 @@ class StompCLI(Cmd, ConnectionListener):
         else:
             self.transaction_id = self.conn.begin()
             self.__sysout('Transaction id: %s' % self.transaction_id)
-            
+
     def help_begin(self):
         self.help('begin', '''Start a transaction. Transactions in this case apply to sending and acknowledging -
 \tany messages sent or acknowledged during a transaction will be handled atomically based on the
@@ -395,7 +416,7 @@ class StompCLI(Cmd, ConnectionListener):
             self.__sysout('Committing %s' % self.transaction_id)
             self.conn.commit(transaction=self.transaction_id)
             self.transaction_id = None
-            
+
     def help_commit(self):
         self.help('commit', 'Commit a transaction in progress.')
 
@@ -413,7 +434,7 @@ class StompCLI(Cmd, ConnectionListener):
             self.conn.remove_listener('stats')
         else:
             self.__error('Expecting: stats [on|off]')
-            
+
     def help_stats(self):
         self.help('stats [on|off]', '''Record statistics on messages sent, received, errors, etc. If no argument (on|off) is specified,
 \tdump the current statistics.''')
@@ -432,33 +453,35 @@ class StompCLI(Cmd, ConnectionListener):
     def help_run(self):
         self.help('run <filename>', 'Execute commands in a specified file')
 
+
 def do_nothing_loop():
     while 1:
         time.sleep(1)
 
-def main():    
+
+def main():
     parser = OptionParser(version=stomppy_version)
-    
-    parser.add_option('-H', '--host', type = 'string', dest = 'host', default = 'localhost',
-                      help = 'Hostname or IP to connect to. Defaults to localhost if not specified.')
-    parser.add_option('-P', '--port', type = int, dest = 'port', default = 61613,
-                      help = 'Port providing stomp protocol connections. Defaults to 61613 if not specified.')
-    parser.add_option('-U', '--user', type = 'string', dest = 'user', default = None,
-                      help = 'Username for the connection')
-    parser.add_option('-W', '--password', type = 'string', dest = 'password', default = None,
-                      help = 'Password for the connection')
-    parser.add_option('-F', '--file', type = 'string', dest = 'filename',
-                      help = 'File containing commands to be executed, instead of prompting from the command prompt.')
-    parser.add_option('-S', '--stomp', type = 'string', dest = 'stomp', default = '1.1',
-                      help = 'Set the STOMP protocol version.')
-    parser.add_option('-L', '--listen', type = 'string', dest = 'listen', default = None,
-                      help = 'Listen for messages on a queue/destination')
-    parser.add_option("-V", "--verbose", dest = "verbose", default = 'on',
-                      help = 'Verbose logging "on" or "off" (if on, full headers from stomp server responses are printed)')
-                      
+
+    parser.add_option('-H', '--host', type='string', dest='host', default='localhost',
+                      help='Hostname or IP to connect to. Defaults to localhost if not specified.')
+    parser.add_option('-P', '--port', type=int, dest='port', default=61613,
+                      help='Port providing stomp protocol connections. Defaults to 61613 if not specified.')
+    parser.add_option('-U', '--user', type='string', dest='user', default=None,
+                      help='Username for the connection')
+    parser.add_option('-W', '--password', type='string', dest='password', default=None,
+                      help='Password for the connection')
+    parser.add_option('-F', '--file', type='string', dest='filename',
+                      help='File containing commands to be executed, instead of prompting from the command prompt.')
+    parser.add_option('-S', '--stomp', type='string', dest='stomp', default='1.1',
+                      help='Set the STOMP protocol version.')
+    parser.add_option('-L', '--listen', type='string', dest='listen', default=None,
+                      help='Listen for messages on a queue/destination')
+    parser.add_option("-V", "--verbose", dest="verbose", default='on',
+                      help='Verbose logging "on" or "off" (if on, full headers from stomp server responses are printed)')
+
     parser.set_defaults()
     (options, args) = parser.parse_args()
-    
+
     if options.verbose == 'on':
         verbose = True
     else:
@@ -470,7 +493,7 @@ def main():
         prompt = '> '
 
     st = StompCLI(options.host, options.port, options.user, options.password, options.stomp, prompt, verbose)
-    
+
     if options.listen:
         st.do_subscribe(options.listen)
         try:

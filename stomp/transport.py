@@ -22,44 +22,50 @@ except ImportError:
 try:
     import ssl
     from ssl import SSLError
+
     DEFAULT_SSL_VERSION = ssl.PROTOCOL_SSLv3
-except ImportError: # python version < 2.6 without the backported ssl module
+except ImportError:  # python version < 2.6 without the backported ssl module
     ssl = None
+
     class SSLError:
         pass
+
     DEFAULT_SSL_VERSION = None
 
 try:
     from socket import SOL_SOCKET, SO_KEEPALIVE
     from socket import SOL_TCP, TCP_KEEPIDLE, TCP_KEEPINTVL, TCP_KEEPCNT
-    LINUX_KEEPALIVE_AVAIL=True
+
+    LINUX_KEEPALIVE_AVAIL = True
 except ImportError:
-    LINUX_KEEPALIVE_AVAIL=False
+    LINUX_KEEPALIVE_AVAIL = False
 
 import exception
 import listener
 import utils
-from backward import decode, encode, get_errno, pack, NULL
+from backward import decode, encode, get_errno, pack
 
 try:
-    import uuid    
+    import uuid
 except ImportError:
     from backward import uuid
 
 import logging
+
 log = logging.getLogger('stomp.py')
+
 
 class Transport(listener.Publisher):
     """
     Represents a STOMP client 'transport'. Effectively this is the communications mechanism without the definition of the protocol.
     """
-    
+
     #
     # Used to parse the STOMP "content-length" header lines,
     #
     __content_length_re = re.compile('^content-length[:]\\s*(?P<value>[0-9]+)', re.MULTILINE)
 
-    def __init__(self, 
+    def __init__(self,
                  host_and_ports=None,
                  prefer_localhost=True,
                  try_loopback_connect=True,
@@ -78,7 +84,7 @@ class Transport(listener.Publisher):
                  timeout=None,
                  keepalive=None,
                  vhost=None
-                 ):
+    ):
         """
         \param host_and_ports            
             a list of (host, port) tuples.
@@ -178,7 +184,7 @@ class Transport(listener.Publisher):
             for host_and_port in sorted_host_and_ports:
                 if utils.is_localhost(host_and_port) == 1:
                     port = host_and_port[1]
-                    if (not ("127.0.0.1", port) in sorted_host_and_ports 
+                    if (not ("127.0.0.1", port) in sorted_host_and_ports
                         and not ("localhost", port) in sorted_host_and_ports):
                         loopback_host_and_ports.append(("127.0.0.1", port))
 
@@ -199,7 +205,7 @@ class Transport(listener.Publisher):
         self.__reconnect_sleep_max = reconnect_sleep_max
         self.__reconnect_attempts_max = reconnect_attempts_max
         self.__timeout = timeout
-        
+
         self.socket = None
         self.__socket_semaphore = threading.BoundedSemaphore(1)
         self.current_host_and_port = None
@@ -213,7 +219,7 @@ class Transport(listener.Publisher):
         self.blocking = None
         self.connected = False
         self.connection_error = False
-        
+
         # setup SSL
         self.__ssl_params = {}
         if use_ssl:
@@ -227,17 +233,17 @@ class Transport(listener.Publisher):
 
         self.__receipts = {}
         self.__wait_on_receipt = wait_on_receipt
-        
+
         # flag used when we receive the disconnect receipt
         self.__disconnect_receipt = None
-        
+
         # function for creating threads used by the connection
         self.create_thread_fc = utils.default_create_thread
 
         self.__keepalive = keepalive
         self.vhost = vhost
 
-            
+
     def override_threading(self, create_thread_fc):
         """
         Override for thread creation. Use an alternate threading library by
@@ -270,7 +276,7 @@ class Transport(listener.Publisher):
         while not self.__receiver_thread_exited:
             self.__receiver_thread_exit_condition.wait()
         self.__receiver_thread_exit_condition.release()
-        
+
     def is_connected(self):
         """
         Return true if the socket managed by this connection is connected
@@ -279,14 +285,14 @@ class Transport(listener.Publisher):
             return self.socket is not None and self.socket.getsockname()[1] != 0 and self.connected
         except socket.error:
             return False
-            
+
     def set_connected(self, connected):
         self.__connect_wait_condition.acquire()
         self.connected = connected
         if connected:
             self.__connect_wait_condition.notify()
         self.__connect_wait_condition.release()
-        
+
     #
     # Manage objects listening to incoming frames
     #
@@ -303,7 +309,7 @@ class Transport(listener.Publisher):
             the listener object
         """
         self.listeners[name] = listener
-        
+
     def remove_listener(self, name):
         """
         Remove a listener according to the specified name
@@ -322,7 +328,7 @@ class Transport(listener.Publisher):
             return self.listeners[name]
         else:
             return None
-        
+
     def disconnect_socket(self):
         """
         Disconnect the underlying socket connection
@@ -394,11 +400,11 @@ class Transport(listener.Publisher):
 
     def send_over_socket(self, encoded_frame):
         self.socket.sendall(encoded_frame)
-        
+
     def read_from_socket(self):
         c = self.socket.recv(1024)
         return c
-        
+
     def process_frame(self, f, frame_str):
         frame_type = f.cmd.lower()
         if frame_type in ['connected', 'message', 'receipt', 'error', 'heartbeat']:
@@ -431,7 +437,7 @@ class Transport(listener.Publisher):
                 self.__send_wait_condition.notify()
             finally:
                 self.__send_wait_condition.release()
-            
+
             # received a stomp 1.1+ disconnect receipt
             if receipt == self.__disconnect_receipt:
                 self.disconnect_socket()
@@ -448,7 +454,7 @@ class Transport(listener.Publisher):
             if not hasattr(listener, 'on_%s' % frame_type):
                 log.debug("listener %s has no method on_%s", listener, frame_type)
                 continue
-                
+
             if frame_type == 'connecting':
                 listener.on_connecting(self.current_host_and_port)
                 continue
@@ -502,7 +508,7 @@ class Transport(listener.Publisher):
                     try:
                         self.socket.close()
                     except:
-                        pass # ignore errors when attempting to close socket
+                        pass  # ignore errors when attempting to close socket
                     self.socket = None
                     self.current_host_and_port = None
         finally:
@@ -569,7 +575,7 @@ class Transport(listener.Publisher):
                                     #
                                     break
                     result.append(frame)
-                    self.__recvbuf = self.__recvbuf[pos+1:]
+                    self.__recvbuf = self.__recvbuf[pos + 1:]
                 else:
                     break
         return result
@@ -656,7 +662,7 @@ class Transport(listener.Publisher):
                     if self.blocking is not None:
                         self.socket.setblocking(self.blocking)
                     self.socket.connect(host_and_port)
-                    
+
                     #
                     # Validate server cert
                     #
@@ -675,8 +681,8 @@ class Transport(listener.Publisher):
                     log.warning("Could not connect to host %s, port %s", host_and_port[0], host_and_port[1], exc_info=1)
 
             if self.socket is None:
-                sleep_duration = (min(self.__reconnect_sleep_max, 
-                                      ((self.__reconnect_sleep_initial / (1.0 + self.__reconnect_sleep_increase)) 
+                sleep_duration = (min(self.__reconnect_sleep_max,
+                                      ((self.__reconnect_sleep_initial / (1.0 + self.__reconnect_sleep_increase))
                                        * math.pow(1.0 + self.__reconnect_sleep_increase, sleep_exp)))
                                   * (1.0 + random.random() * self.__reconnect_sleep_jitter))
                 sleep_end = time.time() + sleep_duration
@@ -686,9 +692,9 @@ class Transport(listener.Publisher):
 
                 if sleep_duration < self.__reconnect_sleep_max:
                     sleep_exp += 1
-                    
+
         if not self.socket:
-            raise exception.ConnectFailedException()            
+            raise exception.ConnectFailedException()
 
     def wait_for_connection(self, timeout=None):
         """

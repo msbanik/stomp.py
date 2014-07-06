@@ -3,6 +3,7 @@
 
 NULL = '\x00'
 
+
 def input_prompt(prompt):
     """
     Get user input
@@ -11,7 +12,7 @@ def input_prompt(prompt):
 
 
 def decode(byte_data):
-    return byte_data # no way to know if it's unicode or not, so just pass through unmolested
+    return byte_data  # no way to know if it's unicode or not, so just pass through unmolested
 
 
 def encode(char_data):

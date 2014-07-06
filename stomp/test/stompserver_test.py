@@ -1,11 +1,10 @@
 import unittest
 
 import stomp
-
 from stomp.test.testutils import *
 
-class TestRabbitMQSend(unittest.TestCase):
 
+class TestRabbitMQSend(unittest.TestCase):
     def setUp(self):
         pass
 
@@ -20,9 +19,9 @@ class TestRabbitMQSend(unittest.TestCase):
         conn.send(body='this is a test', destination='/queue/test', receipt='123')
 
         listener.wait_on_receipt()
-        
+
         conn.unsubscribe('/queue/test')
-        
+
         conn.disconnect(receipt=None)
 
         self.assert_(listener.connections == 1, 'should have received 1 connection acknowledgement')

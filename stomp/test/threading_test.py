@@ -2,14 +2,11 @@ try:
     from queue import Queue, Empty, Full
 except ImportError:
     from Queue import Queue, Empty, Full
-import threading
-import sys
-import time
 import unittest
 
 import stomp
-
 from stomp.test.testutils import *
+
 
 class MQ(object):
     def __init__(self):
@@ -21,11 +18,12 @@ class MQ(object):
     def send(self, topic, msg, persistent='true', retry=False):
         self.connection.send(destination="/topic/%s" % topic, body=msg,
                              persistent=persistent)
+
+
 mq = MQ()
 
 
 class TestThreading(unittest.TestCase):
-
     def setUp(self):
         """Test that mq sends don't wedge their threads.
 
@@ -48,7 +46,7 @@ class TestThreading(unittest.TestCase):
                                  target=self.make_sender(i))
             t.setDaemon(1)
             self.threads.append(t)
-            
+
     def tearDown(self):
         for t in self.threads:
             if not t.isAlive:
@@ -79,6 +77,7 @@ class TestThreading(unittest.TestCase):
         Q = self.Q
         Cmd = self.Cmd
         Error = self.Error
+
         def send(i=i, Q=Q, Cmd=Cmd, Error=Error):
             counter = 0
             print("%s starting" % i)
@@ -103,9 +102,10 @@ class TestThreading(unittest.TestCase):
                                 break
                         except Empty:
                             pass
-                        counter +=1
+                        counter += 1
             finally:
                 print("final", i, counter)
+
         return send
 
     def test_threads_dont_wedge(self):

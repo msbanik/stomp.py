@@ -2,8 +2,8 @@ import unittest
 
 import stomp
 from stomp import transport
-
 from stomp.test.testutils import *
+
 
 class TestSSL(unittest.TestCase):
     def setUp(self):
@@ -14,6 +14,7 @@ class TestSSL(unittest.TestCase):
     def test_ssl_connection(self):
         try:
             import ssl
+
             queuename = '/queue/test4-%s' % self.timestamp
             conn = stomp.Connection(get_standard_ssl_host())
             conn.set_ssl(get_standard_ssl_host())

@@ -14,6 +14,7 @@ class Protocol10(ConnectionListener):
     """
     Version 1.0 of the protocol.
     """
+
     def __init__(self, transport):
         self.transport = transport
         transport.set_listener('protocol-listener', self)
@@ -31,7 +32,7 @@ class Protocol10(ConnectionListener):
 
     def ack(self, id, transaction=None):
         assert id is not None, "'id' is required"
-        headers = { HDR_MESSAGE_ID : id }
+        headers = {HDR_MESSAGE_ID: id}
         if transaction:
             headers[HDR_TRANSACTION] = transaction
         self.send_frame(CMD_ACK, headers)
@@ -54,7 +55,7 @@ class Protocol10(ConnectionListener):
         cmd = CMD_CONNECT
         headers = utils.merge_headers([headers, keyword_headers])
         headers[HDR_ACCEPT_VERSION] = self.version
-        
+
         if username is not None:
             headers[HDR_LOGIN] = username
 
@@ -62,7 +63,7 @@ class Protocol10(ConnectionListener):
             headers[HDR_PASSCODE] = passcode
 
         self.send_frame(cmd, headers)
-        
+
         if wait:
             self.transport.wait_for_connection()
             if self.transport.connection_error:
@@ -109,6 +110,7 @@ class Protocol11(HeartbeatListener, ConnectionListener):
     """
     Version 1.1 of the protocol.
     """
+
     def __init__(self, transport, heartbeats=(0, 0)):
         HeartbeatListener.__init__(self, heartbeats)
         self.transport = transport
@@ -116,10 +118,11 @@ class Protocol11(HeartbeatListener, ConnectionListener):
         self.version = '1.1'
 
     def __escape_headers(self, headers):
-        for key,val in headers.items():
+        for key, val in headers.items():
             try:
                 val = val.replace('\\', '\\\\').replace('\n', '\\n').replace(':', '\\c')
-            except: pass
+            except:
+                pass
             headers[key] = val
 
     def send_frame(self, cmd, headers={}, body=''):
@@ -137,7 +140,7 @@ class Protocol11(HeartbeatListener, ConnectionListener):
     def ack(self, id, subscription, transaction=None):
         assert id is not None, "'id' is required"
         assert subscription is not None, "'subscription' is required"
-        headers = { HDR_MESSAGE_ID : id, HDR_SUBSCRIPTION : subscription }
+        headers = {HDR_MESSAGE_ID: id, HDR_SUBSCRIPTION: subscription}
         if transaction:
             headers[HDR_TRANSACTION] = transaction
         self.send_frame(CMD_ACK, headers)
@@ -160,7 +163,7 @@ class Protocol11(HeartbeatListener, ConnectionListener):
         cmd = CMD_STOMP
         headers = utils.merge_headers([headers, keyword_headers])
         headers[HDR_ACCEPT_VERSION] = self.version
-        
+
         if self.transport.vhost:
             headers[HDR_HOST] = self.transport.vhost
 
@@ -171,7 +174,7 @@ class Protocol11(HeartbeatListener, ConnectionListener):
             headers[HDR_PASSCODE] = passcode
 
         self.send_frame(cmd, headers)
-        
+
         if wait:
             self.transport.wait_for_connection()
             if self.transport.connection_error:
@@ -186,7 +189,7 @@ class Protocol11(HeartbeatListener, ConnectionListener):
     def nack(self, id, subscription, transaction=None):
         assert id is not None, "'id' is required"
         assert subscription is not None, "'subscription' is required"
-        headers = { HDR_MESSAGE_ID : id, HDR_SUBSCRIPTION : subscription }
+        headers = {HDR_MESSAGE_ID: id, HDR_SUBSCRIPTION: subscription}
         if transaction:
             headers[HDR_TRANSACTION] = transaction
         self.send_frame(CMD_NACK, headers)
@@ -223,15 +226,17 @@ class Protocol12(Protocol11):
     """
     Version 1.2 of the protocol.
     """
+
     def __init__(self, transport, heartbeats=(0, 0)):
         Protocol11.__init__(self, transport, heartbeats)
         self.version = '1.2'
 
     def __escape_headers(self, headers):
-        for key,val in headers.items():
+        for key, val in headers.items():
             try:
                 val = val.replace('\\', '\\\\').replace('\n', '\\n').replace(':', '\\c').replace('\r', '\\r')
-            except: pass
+            except:
+                pass
             headers[key] = val
 
     def send_frame(self, cmd, headers={}, body=''):
@@ -242,14 +247,14 @@ class Protocol12(Protocol11):
 
     def ack(self, id, transaction=None):
         assert id is not None, "'id' is required"
-        headers = { HDR_ID : id }
+        headers = {HDR_ID: id}
         if transaction:
             headers[HDR_TRANSACTION] = transaction
         self.send_frame(CMD_ACK, headers)
 
     def nack(self, id, transaction=None):
         assert id is not None, "'id' is required"
-        headers = { HDR_ID : id }
+        headers = {HDR_ID: id}
         if transaction:
             headers[HDR_TRANSACTION] = transaction
         self.send_frame(CMD_NACK, headers)
@@ -268,7 +273,7 @@ class Protocol12(Protocol11):
         headers = utils.merge_headers([headers, keyword_headers])
         headers[HDR_ACCEPT_VERSION] = self.version
         headers[HDR_HOST] = self.transport.current_host_and_port[0]
-        
+
         if self.transport.vhost:
             headers[HDR_HOST] = self.transport.vhost
 
@@ -279,7 +284,7 @@ class Protocol12(Protocol11):
             headers[HDR_PASSCODE] = passcode
 
         self.send_frame(cmd, headers)
-        
+
         if wait:
             self.transport.wait_for_connection()
             if self.transport.connection_error:

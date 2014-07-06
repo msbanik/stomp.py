@@ -25,7 +25,7 @@ def encode(char_data):
 
 
 def hasbyte(byte, byte_data):
-    assert type(byte) is int and 0 <= byte and byte < 2**8
+    assert type(byte) is int and 0 <= byte and byte < 2 ** 8
     return bytes([byte]) in byte_data
 
 

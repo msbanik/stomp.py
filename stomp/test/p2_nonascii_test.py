@@ -1,14 +1,12 @@
 # -*- coding: UTF-8 -*-
 
-import time
 import unittest
 
 import stomp
-
 from stomp.test.testutils import *
 
-class TestNonAsciiSend(unittest.TestCase):
 
+class TestNonAsciiSend(unittest.TestCase):
     def setUp(self):
         conn = stomp.Connection(get_standard_host())
         listener = TestListener('123')
@@ -18,11 +16,11 @@ class TestNonAsciiSend(unittest.TestCase):
         self.conn = conn
         self.listener = listener
         self.timestamp = time.strftime('%Y%m%d%H%M%S')
-        
+
     def tearDown(self):
         if self.conn:
             self.conn.disconnect(receipt=None)
-       
+
     def test_send_nonascii(self):
         queuename = '/queue/p2nonasciitest-%s' % self.timestamp
         self.conn.subscribe(destination=queuename, ack='auto', id="1")

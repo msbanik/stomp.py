@@ -1,11 +1,10 @@
 import unittest
 
 import stomp
-
 from stomp.test.testutils import *
 
-class TestRabbitMQSend(unittest.TestCase):
 
+class TestRabbitMQSend(unittest.TestCase):
     def setUp(self):
         pass
 
